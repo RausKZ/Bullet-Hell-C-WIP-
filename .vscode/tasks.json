@@ -2,33 +2,30 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "type": "cppbuild",
-            "label": "C/C++: gcc compilar raylib",
-            "command": "/usr/bin/gcc",
-            "args": [
-                "-g",
-                "${file}",
-                "-o",
-                "${fileDirname}/${fileBasenameNoExtension}",
-                "-lraylib",
-                "-lGL",
-                "-lm",
-                "-lpthread",
-                "-ldl",
-                "-lrt",
-                "-lX11"
-            ],
+            "type": "shell",
+            "label": "CMake: configurar",
+            "command": "cmake",
+            "args": ["-B", "build", "-DCMAKE_BUILD_TYPE=Release"],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}"
             },
-            "problemMatcher": [
-                "$gcc"
-            ],
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "CMake: compilar",
+            "command": "cmake",
+            "args": ["--build", "build", "--config", "Release"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": "CMake: configurar",
+            "problemMatcher": ["$gcc"],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "detail": "Tarea predeterminada para compilar C con Raylib"
+            "detail": "Compila el juego con raylib enlazado estaticamente"
         }
     ]
 }

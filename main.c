@@ -1,7 +1,6 @@
 #include "raylib.h"
 #include <time.h> // For randomness
 #include <stdlib.h>
-#include <unistd.h>
 #define MAXBULLETS 500000
 
 void CircleMovement(int *Xaxis, int *Yaxis,int ScreenWidth,int ScreenHeight,int CircleRadius){
