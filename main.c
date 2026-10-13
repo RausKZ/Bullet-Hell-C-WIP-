@@ -3,6 +3,18 @@
 #include <stdlib.h>
 #define MAXBULLETS 500000
 
+typedef struct{
+    Vector2 position;
+    Vector2 Acceleration;
+    bool disabled;
+    Color color;
+}Bullets;
+
+typedef struct{
+    int MovementCircleX;
+    int MovementCircleY;
+}Player;
+
 void CircleMovement(int *Xaxis, int *Yaxis,int ScreenWidth,int ScreenHeight,int CircleRadius){
     int FastMovementSpeed = 6;
     int SlowMovementSpeed = 3;
@@ -57,19 +69,74 @@ void ScoreBoard(long int *Score,int ScreenWidth,int ScreenHeight){
     *Score += 1;
 }
 
+void DrawMainMenu(int ScreenWidth,int ScreenHeight){
+  ClearBackground(BLACK);
+  DrawText("BULLET HELL",(ScreenWidth/2)-350,200,100,WHITE);
+  DrawRectangle((ScreenWidth/2)-150,(ScreenHeight/2)-100,300,100,WHITE);
+  DrawRectangleLines((ScreenWidth/2)-150,(ScreenHeight/2)-100,300,100,RED);
+  DrawText("PLAY",(ScreenWidth/2)-100,(ScreenHeight/2)-90,80,RED);
+  DrawRectangle((ScreenWidth/2)-150,(ScreenHeight/2)+80,300,100,WHITE);
+  DrawRectangleLines((ScreenWidth/2)-150,(ScreenHeight/2)+80,300,100,RED);
+  DrawText("QUIT",(ScreenWidth/2)-100,(ScreenHeight/2)+90,80,RED);
+}
 
+int MouseClickingLogic(){
+  int MouseX = GetMouseX();
+  int MouseY = GetMouseY();
+  if(IsMouseButtonPressed(0)){
+    // Press Play
+    if(MouseX>490 && MouseX <790 && MouseY > 360 && MouseY < 460){
+      EndDrawing();
+      return 1;
+    }
+    //Press Quit
+    if(MouseX>490 && MouseX <790 && MouseY > 540 && MouseY < 640){
+      EndDrawing();
+      return 0;
+    }
+  }
+  // Do none of the above
+  return 3;
+}
 
-typedef struct{
-    Vector2 position;
-    Vector2 Acceleration;
-    bool disabled;
-    Color color;
-}Bullets;
+void SpawnBullet(float spawnCooldown, float *spawnCooldownTimer, Bullets *bullets, int *bulletCount, int ScreenWidth, int ScreenHeight){
+  *spawnCooldownTimer = spawnCooldown;
+  if(*bulletCount < MAXBULLETS){
+    bullets[*bulletCount].disabled = false;
+    bullets[*bulletCount].position = (Vector2){(float)(rand()%((ScreenWidth-  1100 + 700) - (ScreenWidth - 1100) + 1) + (ScreenWidth - 1100)), 0.0f};
+    bullets[*bulletCount].color = BLUE;
+    bullets[*bulletCount].Acceleration = (Vector2){0,20};
+    (*bulletCount)++;
+  }
+}
 
-typedef struct{
-    int MovementCircleX;
-    int MovementCircleY;
-}Player;
+void DisableBullets(int *bulletCount, Bullets *bullets, int ScreenHeight){
+  for(int i = 0; i < *bulletCount;i++){
+    if(!bullets[i].disabled){
+      bullets[i].position.y += bullets[i].Acceleration.y;
+    }
+    if(bullets[i].position.y > ScreenHeight || bullets[i].position.y < 0){
+      bullets[i].disabled = true;
+    }
+  }
+}
+
+int DeadScreenDraw(long int *Score, int ScreenWidth, int ScreenHeight, int *GameState){
+  ClearBackground(RED);
+  DrawText(TextFormat("GAME OVER\nPress Space to go to main menu\nor enter to continue"),(ScreenWidth/2) - 30 * 5,ScreenHeight/2,30,BLACK);
+  DrawText(TextFormat("Your Score: %ld", *Score), (ScreenWidth - 300), (300), 30, WHITE);
+  if(IsKeyDown(KEY_SPACE)){
+    *Score = 0;
+    *GameState = 0;
+    return 0;
+  }
+  if(IsKeyDown(KEY_ENTER)){
+    *Score = 0;
+    *GameState = 1;
+    return 1;
+  }
+  return -1;
+}
 
 int main(){
     srand(time(NULL));
@@ -100,31 +167,18 @@ int main(){
     start:
     if(GameState == 0){
         while(!WindowShouldClose()){
-            // Mouse position
-            int MouseX = GetMouseX();
-            int MouseY = GetMouseY();
-            if(IsMouseButtonPressed(0)){
-              if(MouseX>490 && MouseX <790 && MouseY > 360 && MouseY < 460){
-                GameState = 1;
-                EndDrawing();
-                goto mainloop;
-              }
-              if(MouseX>490 && MouseX <790 && MouseY > 540 && MouseY < 640){
-                EndDrawing();
-                goto ending;
-              }
-            }
-            BeginDrawing();
-                int *Selection=malloc(sizeof(int));
-                ClearBackground(BLACK);
-                DrawText("BULLET HELL",(ScreenWidth/2)-350,200,100,WHITE);
-                DrawRectangle((ScreenWidth/2)-150,(ScreenHeight/2)-100,300,100,WHITE);
-                DrawRectangleLines((ScreenWidth/2)-150,(ScreenHeight/2)-100,300,100,RED);
-                DrawText("PLAY",(ScreenWidth/2)-100,(ScreenHeight/2)-90,80,RED);
-                DrawRectangle((ScreenWidth/2)-150,(ScreenHeight/2)+80,300,100,WHITE);
-                DrawRectangleLines((ScreenWidth/2)-150,(ScreenHeight/2)+80,300,100,RED);
-                DrawText("QUIT",(ScreenWidth/2)-100,(ScreenHeight/2)+90,80,RED);
-            EndDrawing();
+          // Mouse position
+          int checker = MouseClickingLogic();
+          if(checker == 1){
+            GameState = 1;
+            goto mainloop;
+          }
+          if(checker == 0)
+            goto ending;
+          BeginDrawing();
+              int *Selection=malloc(sizeof(int));
+              DrawMainMenu(ScreenWidth,ScreenHeight);
+          EndDrawing();
         }
     }
     mainloop:
@@ -136,24 +190,9 @@ int main(){
             }
             spawnCooldownTimer--;
             if(spawnCooldownTimer < 0){
-                spawnCooldownTimer = spawnCooldown;
-                if(bulletCount < MAXBULLETS){
-                        bullets[bulletCount].disabled = false;
-                        bullets[bulletCount].position = (Vector2){(float)(rand()%((ScreenWidth-  1100 + 700) - (ScreenWidth - 1100) + 1) + (ScreenWidth - 1100)), 0.0f};
-                        bullets[bulletCount].color = BLUE;
-                        bullets[bulletCount].Acceleration = (Vector2){0,20};
-                        bulletCount++;
-                }
+              SpawnBullet(spawnCooldown, &spawnCooldownTimer, bullets,&bulletCount, ScreenWidth, ScreenHeight);
             }
-            for(int i = 0; i < bulletCount;i++){
-                if(!bullets[i].disabled){
-                    bullets[i].position.y += bullets[i].Acceleration.y;
-                }
-                if(bullets[i].position.y > ScreenHeight || bullets[i].position.y < 0){
-                    bullets[i].disabled = true;
-                }
-            }
-
+            DisableBullets(&bulletCount,bullets,ScreenHeight);
             CircleMovement(&player.MovementCircleX,&player.MovementCircleY,ScreenWidth,ScreenHeight,CircleRadius);
             Vector2 Player = {player.MovementCircleX,player.MovementCircleY};
 
@@ -162,15 +201,15 @@ int main(){
                 DrawCircle(player.MovementCircleX,player.MovementCircleY,CircleRadius,WHITE);
                 DrawCircleLines(player.MovementCircleX,player.MovementCircleY,CircleRadius,RED);
                 ScoreBoard(&Score,ScreenWidth,ScreenHeight);
-                    for(int i = 0; i<bulletCount; i++){
-                        if(!bullets[i].disabled)
-                            DrawRectangleV(bullets[i].position,Size,BLUE);
-                            Rectangle bullet1 = {bullets[i].position.x, bullets[i].position.y, Size.x, Size.y};
-                            if(CheckCollisionCircleRec(Player, CircleRadius, bullet1)){
-                                EndDrawing();
-                                GameState = 2;
-                                goto failed;
-                            }
+                for(int i = 0; i<bulletCount; i++){
+                    if(!bullets[i].disabled)
+                      DrawRectangleV(bullets[i].position,Size,BLUE);
+                    Rectangle bullet1 = {bullets[i].position.x, bullets[i].position.y, Size.x, Size.y};
+                    if(CheckCollisionCircleRec(Player, CircleRadius, bullet1)){
+                      EndDrawing();
+                      GameState = 2;
+                      goto failed;
+                    }
                 }
                 DrawRectangleLines((ScreenWidth)-1100,0,700,ScreenHeight,WHITE);
             EndDrawing();
@@ -180,19 +219,11 @@ int main(){
     if(GameState == 2){
         while(!WindowShouldClose()){
             BeginDrawing();
-                ClearBackground(RED);
-                DrawText(TextFormat("GAME OVER\nPress Space to go to main menu\nor enter to continue"),(ScreenWidth/2) - 30 * 5,ScreenHeight/2,30,BLACK);
-                DrawText(TextFormat("Your Score: %ld", Score), (ScreenWidth - 300), (300), 30, WHITE);
-                if(IsKeyDown(KEY_SPACE)){
-                    Score = 0;
-                    GameState = 0;
-                    goto start;
-                }
-                if(IsKeyDown(KEY_ENTER)){
-                    Score = 0;
-                    GameState = 1;
-                    goto mainloop;
-                }
+              int checker = DeadScreenDraw(&Score, ScreenWidth, ScreenHeight, &GameState);
+              if(checker == 0)
+                goto start;
+              if(checker == 1)
+                goto mainloop;
             EndDrawing();
         };
     }
