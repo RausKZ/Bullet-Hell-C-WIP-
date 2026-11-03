@@ -56,22 +56,22 @@ void CircleMovement(int *Xaxis, int *Yaxis,int ScreenWidth,int ScreenHeight,int 
         *Xaxis = CircleRadius + (ScreenWidth - 1100);
     }
     // Y AXIS BOUNDARIES
-    if((*Yaxis + CircleRadius) >= ScreenHeight){
-        *Yaxis = ScreenHeight - CircleRadius;
+    if((*Yaxis + CircleRadius) >= ScreenHeight-10){
+        *Yaxis = ScreenHeight - CircleRadius - 10;
     }
-    if(*Yaxis <= CircleRadius){
-        *Yaxis = CircleRadius;
+    if(*Yaxis <= CircleRadius+10){
+        *Yaxis = CircleRadius+10;
     }
 }
 
-void ScoreBoard(long int *Score,int ScreenWidth,int ScreenHeight){
+void ScoreBoard(long int *Score,int ScreenWidth,int ScreenHeight, float DeltaTime){
     DrawText(TextFormat("SCORE: %ld", *Score), (ScreenWidth - 300), (300), 30, WHITE);
-    *Score += 1;
+    if(DeltaTime >= 1.5)
+      *Score += 1;
 }
 
 void DrawMainMenu(int ScreenWidth,int ScreenHeight){
-  ClearBackground(BLACK);
-  DrawText("BULLET HELL",(ScreenWidth/2)-350,200,100,WHITE);
+  DrawText("BULLET HELL",(ScreenWidth/2)-350,200,100,BLACK);
   DrawRectangle((ScreenWidth/2)-150,(ScreenHeight/2)-100,300,100,WHITE);
   DrawRectangleLines((ScreenWidth/2)-150,(ScreenHeight/2)-100,300,100,RED);
   DrawText("PLAY",(ScreenWidth/2)-100,(ScreenHeight/2)-90,80,RED);
@@ -121,16 +121,18 @@ void DisableBullets(int *bulletCount, Bullets *bullets, int ScreenHeight){
   }
 }
 
-int DeadScreenDraw(long int *Score, int ScreenWidth, int ScreenHeight, int *GameState){
+int DeadScreenDraw(long int *Score, int ScreenWidth, int ScreenHeight, int *GameState, int *bulletCount){
   ClearBackground(RED);
   DrawText(TextFormat("GAME OVER\nPress Space to go to main menu\nor enter to continue"),(ScreenWidth/2) - 30 * 5,ScreenHeight/2,30,BLACK);
   DrawText(TextFormat("Your Score: %ld", *Score), (ScreenWidth - 300), (300), 30, WHITE);
   if(IsKeyDown(KEY_SPACE)){
+    *bulletCount = 0;
     *Score = 0;
     *GameState = 0;
     return 0;
   }
   if(IsKeyDown(KEY_ENTER)){
+    *bulletCount = 0;
     *Score = 0;
     *GameState = 1;
     return 1;
@@ -138,12 +140,14 @@ int DeadScreenDraw(long int *Score, int ScreenWidth, int ScreenHeight, int *Game
   return -1;
 }
 
+
 int main(){
     srand(time(NULL));
     // SCREEN SETTINGS
         const int ScreenWidth = 1280;
         const int ScreenHeight = 920;
-    InitWindow(ScreenWidth,ScreenHeight,"Bullet hell");
+        InitWindow(ScreenWidth,ScreenHeight,"Bullet hell");
+        Texture2D background = LoadTexture("Assets/Mokou1.png");
     // PLAYER
         Player player = {640,460};
         int CircleRadius = 5;
@@ -156,6 +160,7 @@ int main(){
     // SPAWNING STUFF 
         float spawnCooldown = 3;
         float spawnCooldownTimer = spawnCooldown;
+        float DeltaTime = 0;
     // Score
         long int Score = 0;
     // GameState
@@ -177,19 +182,23 @@ int main(){
             goto ending;
           BeginDrawing();
               int *Selection=malloc(sizeof(int));
+              ClearBackground(BLACK);
+              DrawTexture(background,0,0,WHITE);
               DrawMainMenu(ScreenWidth,ScreenHeight);
+              free(Selection);
           EndDrawing();
         }
     }
     mainloop:
     if(GameState == 1){
+      DeltaTime = 0;
         while(!WindowShouldClose()){
             if(bulletCount >= MAXBULLETS){
                 bulletCount = 0;
                 bulletDisabledCount = 0;
             }
             spawnCooldownTimer--;
-            if(spawnCooldownTimer < 0){
+            if(spawnCooldownTimer < 0 && DeltaTime >= 1.5){
               SpawnBullet(spawnCooldown, &spawnCooldownTimer, bullets,&bulletCount, ScreenWidth, ScreenHeight);
             }
             DisableBullets(&bulletCount,bullets,ScreenHeight);
@@ -200,7 +209,7 @@ int main(){
                 ClearBackground(BLACK);
                 DrawCircle(player.MovementCircleX,player.MovementCircleY,CircleRadius,WHITE);
                 DrawCircleLines(player.MovementCircleX,player.MovementCircleY,CircleRadius,RED);
-                ScoreBoard(&Score,ScreenWidth,ScreenHeight);
+                ScoreBoard(&Score,ScreenWidth,ScreenHeight,DeltaTime);
                 for(int i = 0; i<bulletCount; i++){
                     if(!bullets[i].disabled)
                       DrawRectangleV(bullets[i].position,Size,BLUE);
@@ -208,18 +217,21 @@ int main(){
                     if(CheckCollisionCircleRec(Player, CircleRadius, bullet1)){
                       EndDrawing();
                       GameState = 2;
+                      player.MovementCircleX = 640;
+                      player.MovementCircleY = 460;
                       goto failed;
                     }
                 }
-                DrawRectangleLines((ScreenWidth)-1100,0,700,ScreenHeight,WHITE);
+                DrawRectangleLines((ScreenWidth)-1100,10,700,ScreenHeight-20,WHITE);
             EndDrawing();
+            DeltaTime += GetFrameTime();
         };
     }
     failed:
     if(GameState == 2){
         while(!WindowShouldClose()){
             BeginDrawing();
-              int checker = DeadScreenDraw(&Score, ScreenWidth, ScreenHeight, &GameState);
+              int checker = DeadScreenDraw(&Score, ScreenWidth, ScreenHeight, &GameState, &bulletCount);
               if(checker == 0)
                 goto start;
               if(checker == 1)
@@ -228,6 +240,7 @@ int main(){
         };
     }
     ending:
+    UnloadTexture(background);
     CloseWindow();
     free(bullets);
     return 0;
