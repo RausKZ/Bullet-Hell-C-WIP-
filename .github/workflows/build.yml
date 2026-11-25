@@ -1,0 +1,59 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependencias de compilacion (Raylib)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake git \
+            libasound2-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev
+
+      - name: Limpiar compilaciones anteriores
+        run: rm -rf build
+
+      - name: Compilar
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel
+
+      - name: Subir artefacto Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: BulletHell-linux
+          path: |
+            build/BulletHell
+            build/Assets/
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Limpiar compilaciones anteriores
+        run: if (Test-Path build) { Remove-Item -Recurse -Force build }
+
+      - name: Compilar
+        run: |
+          cmake -B build
+          cmake --build build --config Release --parallel
+
+      - name: Subir artefacto Windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: BulletHell-windows
+          path: |
+            build/Release/BulletHell.exe
+            build/Release/Assets/
