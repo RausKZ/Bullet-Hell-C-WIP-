@@ -14,22 +14,19 @@ jobs:
       - name: Dependencias de compilacion (Raylib)
         run: |
           sudo apt-get update
-          sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libxi-dev libgl1-mesa-dev libasound2-dev
+          sudo apt-get install -y build-essential cmake git \
+            libasound2-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev
 
       - name: Compilar
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel
 
-      - name: Librerias dinamicas que necesita el binario
-        run: readelf -d build/BulletHell | grep NEEDED
-
       - name: Subir artefacto Linux
         uses: actions/upload-artifact@v4
         with:
           name: BulletHell-linux
-          # Subimos el ejecutable y la carpeta Assets generada por CMake
           path: |
             build/BulletHell
             build/Assets/
@@ -47,14 +44,10 @@ jobs:
           cmake -B build
           cmake --build build --config Release --parallel
 
-      - name: DLLs que necesita el ejecutable
-        run: dumpbin /dependents build\Release\BulletHell.exe
-
       - name: Subir artefacto Windows
         uses: actions/upload-artifact@v4
         with:
           name: BulletHell-windows
-          # En MSVC, los archivos se generan en build/Release/
           path: |
             build/Release/BulletHell.exe
             build/Release/Assets/
