@@ -40,7 +40,7 @@ int main(){
   // MAIN GAME LOOP
   while(!WindowShouldClose()){
     switch(GameState){
-      case 0:
+      case 0:{
         // Mouse position
         checker = MouseClickingLogic(ScreenWidth,ScreenHeight);
         if(checker == 1){
@@ -63,7 +63,8 @@ int main(){
             free(Selection);
           EndDrawing();
         break;
-      case 1:
+      }
+      case 1:{
         if(bulletCount >= MAXBULLETS){
           bulletCount = 0;
           bulletDisabledCount = 0;
@@ -96,13 +97,15 @@ int main(){
           EndDrawing();
                 DeltaTime += GetFrameTime();
         break;
-      case 2:
+      }
+      case 2:{
         DeltaTime = 0;
         BeginDrawing();
           checker = DeadScreenDraw(&Score, ScreenWidth, ScreenHeight, &GameState, &bulletCount);
         EndDrawing();
         break;
-      case 3:
+      }
+      case 3:{
         int ActiveTab = SettingsMenuPicker(ScreenWidth,ScreenHeight);
         if(ActiveTab != 0)
           CurrentTab = ActiveTab;
@@ -114,8 +117,10 @@ int main(){
           GameState = 0;
          }
         break;
-      default:
+      }
+      default:{
         CloseWindow();
+      }
       }
   }
     ending:
