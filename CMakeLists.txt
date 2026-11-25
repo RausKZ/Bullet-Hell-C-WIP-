@@ -7,8 +7,10 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Tipo de compilacion" FORCE)
 endif()
 
+# MSVC: runtime de C estatico (/MT), asi no hace falta vcruntime140.dll
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
+# --- raylib: se descarga y se compila como libreria estatica -----------------
 include(FetchContent)
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
@@ -24,22 +26,38 @@ FetchContent_MakeAvailable(raylib)
 
 target_compile_definitions(raylib PRIVATE SUPPORT_CLIPBOARD_IMAGE=0)
 
+# --- Juego --------------------------------------------------------------------
 add_executable(BulletHell main.c CoreGameLogic.c)
 target_link_libraries(BulletHell PRIVATE raylib)
 
 if(WIN32)
+    # Aplicacion de ventana, sin consola
     set_target_properties(BulletHell PROPERTIES WIN32_EXECUTABLE TRUE)
     if(MSVC)
         target_link_options(BulletHell PRIVATE /ENTRY:mainCRTStartup)
     else()
+        # MinGW: mete libgcc y libwinpthread dentro del .exe
         target_link_options(BulletHell PRIVATE -static)
     endif()
 elseif(UNIX AND NOT APPLE)
+    # Enlazar librerias del sistema explicitamente para Raylib estatica
+    find_package(OpenGL REQUIRED)
+    find_package(X11 REQUIRED)
+    
+    target_link_libraries(BulletHell PRIVATE 
+        raylib 
+        OpenGL::GL 
+        X11::X11 
+        m 
+        pthread 
+        dl 
+        rt
+    )
+    # --as-needed descarta las librerias que el binario no usa (libGL, libX11...)
     target_link_options(BulletHell PRIVATE -static-libgcc -Wl,--as-needed)
-    # Bibliotecas que Raylib estática necesita en Linux
-    target_link_libraries(BulletHell PRIVATE m pthread dl rt X11 GL)
 endif()
 
+# Copiar la carpeta de Assets al lado del ejecutable automáticamente
 add_custom_command(TARGET BulletHell POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/Assets $<TARGET_FILE_DIR:BulletHell>/Assets
