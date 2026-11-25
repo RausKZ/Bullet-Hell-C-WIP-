@@ -27,7 +27,14 @@ FetchContent_MakeAvailable(raylib)
 target_compile_definitions(raylib PRIVATE SUPPORT_CLIPBOARD_IMAGE=0)
 
 # --- Juego --------------------------------------------------------------------
-add_executable(BulletHell main.c CoreGameLogic.c)
+# ESTO ES LO NUEVO: Busca TODOS los archivos .c en la carpeta actual
+file(GLOB SOURCES "*.c")
+
+# Imprimimos en el log qué archivos encontró (para que puedas verlo en GitHub Actions)
+message(STATUS "Archivos C encontrados: ${SOURCES}")
+
+# Le pasamos la lista de archivos encontrados
+add_executable(BulletHell ${SOURCES})
 target_link_libraries(BulletHell PRIVATE raylib)
 
 if(WIN32)
@@ -53,7 +60,6 @@ elseif(UNIX AND NOT APPLE)
         dl 
         rt
     )
-    # --as-needed descarta las librerias que el binario no usa (libGL, libX11...)
     target_link_options(BulletHell PRIVATE -static-libgcc -Wl,--as-needed)
 endif()
 
