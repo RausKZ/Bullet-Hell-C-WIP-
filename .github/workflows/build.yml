@@ -18,6 +18,10 @@ jobs:
             libasound2-dev libx11-dev libxrandr-dev libxinerama-dev \
             libxcursor-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev
 
+      # ESTO ES NUEVO: Borra la carpeta build para evitar caché
+      - name: Limpiar compilaciones anteriores
+        run: rm -rf build
+
       - name: Compilar
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=Release
@@ -38,6 +42,10 @@ jobs:
 
       - name: Configurar MSVC
         uses: ilammy/msvc-dev-cmd@v1
+
+      # ESTO ES NUEVO: Borra la carpeta build en Windows
+      - name: Limpiar compilaciones anteriores
+        run: if (Test-Path build) { Remove-Item -Recurse -Force build }
 
       - name: Compilar
         run: |
