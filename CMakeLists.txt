@@ -30,7 +30,8 @@ FetchContent_MakeAvailable(raylib)
 target_compile_definitions(raylib PRIVATE SUPPORT_CLIPBOARD_IMAGE=0)
 
 # --- Juego --------------------------------------------------------------------
-add_executable(BulletHell main.c)
+# AÑADIDO: CoreGameLogic.c
+add_executable(BulletHell main.c CoreGameLogic.c)
 target_link_libraries(BulletHell PRIVATE raylib)
 
 if(WIN32)
@@ -46,3 +47,9 @@ elseif(UNIX AND NOT APPLE)
     # --as-needed descarta las librerias que el binario no usa (libGL, libX11...)
     target_link_options(BulletHell PRIVATE -static-libgcc -Wl,--as-needed)
 endif()
+
+# AÑADIDO: Copiar la carpeta de Assets al lado del ejecutable
+add_custom_command(TARGET BulletHell POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/Assets $<TARGET_FILE_DIR:BulletHell>/Assets
+)
