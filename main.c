@@ -99,7 +99,7 @@ int main(){
       case 2:
         DeltaTime = 0;
         BeginDrawing();
-          int checker = DeadScreenDraw(&Score, ScreenWidth, ScreenHeight, &GameState, &bulletCount);
+          checker = DeadScreenDraw(&Score, ScreenWidth, ScreenHeight, &GameState, &bulletCount);
         EndDrawing();
         break;
       case 3:
