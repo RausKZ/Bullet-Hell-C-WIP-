@@ -2,6 +2,7 @@
 Simple Bullet hell made on C by using the raylib library.
 ## 🎮 Controls
 WASD - move
+
 LeftShift - move slower
 ## 🖤 PLAY
 Download either the BulletHell-linux.zip or BulletHell-windows.zip (depending on your operating system), then extract it and run the executable.
